@@ -1,6 +1,21 @@
-# ajudaqui-fiscal
+# ajudaqui-fiscal (v1.0.0)
 
 Uma biblioteca Java para captura e normalização de documentos fiscais (NFCe/NFe) diretamente dos portais da SEFAZ.
+
+## 📍 Roadmap de Cobertura
+
+### Documentos Suportados
+- [x] **NFC-e** (Modelo 65) - Nota Fiscal de Consumidor Eletrônica
+- [ ] **NF-e** (Modelo 55) - Nota Fiscal Eletrônica
+- [ ] **SAT/CFe** (Modelo 59) - Cupom Fiscal Eletrônico (SP)
+- [ ] **MFE** (Modelo 65/59) - Módulo Fiscal Eletrônico (CE)
+
+### Estados Suportados (NFC-e)
+- [x] Pernambuco (PE)
+- [ ] São Paulo (SP)
+- [ ] Minas Gerais (MG)
+- [ ] Rio de Janeiro (RJ)
+- [ ] Outros...
 
 ## 🚀 Características
 
@@ -11,11 +26,6 @@ Uma biblioteca Java para captura e normalização de documentos fiscais (NFCe/NF
 
 ## 📦 Instalação
 
-### Maven Local (Uso em desenvolvimento)
-Para usar a lib em outros projetos na sua máquina, execute:
-```bash
-./gradlew publishToMavenLocal
-```
 
 ### Configuração no Projeto Consumidor (Gradle)
 ```gradle
