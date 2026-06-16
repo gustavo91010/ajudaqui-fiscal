@@ -5,7 +5,6 @@ import com.ajudaqui.internal.FiscalParser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
@@ -21,89 +20,124 @@ public class NFCePRParser implements FiscalParser<NFCePRRawDocument, UrlInput> {
     try {
       String sanitizedUrl = input.getUrl().replace("|", "%7C");
 
-      String xml = Jsoup.connect(sanitizedUrl)
-          .userAgent("Mozilla/5.0")
-          .execute()
-          .body();
+      Document doc = Jsoup.connect(sanitizedUrl)
+          .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.31")
+          .followRedirects(true)
+          .timeout(15000)
+          .get();
 
-      Document doc = Jsoup.parse(xml, "", Parser.xmlParser());
-
-      Map<String, String> rawData = new HashMap<>();
-      List<Map<String, String>> items = new ArrayList<>();
-
-      Element ide = doc.select("ide").first();
-      if (ide != null) {
-        rawData.put("emissionDate", ide.select("dhEmi").text());
-        rawData.put("number", ide.select("nNF").text());
-        rawData.put("series", ide.select("serie").text());
-      }
-
-      Element emit = doc.select("emit").first();
-      if (emit != null) {
-        rawData.put("issuerName", emit.select("xNome").text());
-        rawData.put("cnpj", emit.select("CNPJ").text());
-      }
-
-      Element chNFe = doc.select("chNFe").first();
-      if (chNFe != null) {
-        rawData.put("accessKey", chNFe.text());
-      } else {
-        Element infNFe = doc.select("infNFe").first();
-        if (infNFe != null) {
-          rawData.put("accessKey", infNFe.attr("Id").replaceAll("[^0-9]", ""));
-        }
-      }
-
-      Element icmsTot = doc.select("total > ICMSTot").first();
-      if (icmsTot != null) {
-        rawData.put("totalProducts", icmsTot.select("vProd").text());
-        rawData.put("totalInvoice", icmsTot.select("vNF").text());
-        rawData.put("discount", icmsTot.select("vDesc").text());
-      }
-
-      List<Map<String, String>> payments = new ArrayList<>();
-      Elements detPags = doc.select("pag > detPag");
-      for (Element detPag : detPags) {
-        Map<String, String> payment = new HashMap<>();
-        payment.put("method", detPag.select("tPag").text());
-        payment.put("amount", detPag.select("vPag").text());
-        payments.add(payment);
-      }
-
-      Element vTroco = doc.select("pag > vTroco").first();
-      if (vTroco != null) {
-        rawData.put("change", vTroco.text());
-      }
-
-      if (payments.isEmpty()) {
-        Element pag = doc.select("pag").first();
-        if (pag != null && !pag.select("vPag").text().isEmpty()) {
-          Map<String, String> payment = new HashMap<>();
-          payment.put("method", "99");
-          payment.put("amount", pag.select("vPag").text());
-          payments.add(payment);
-        }
-      }
-
-      Elements dets = doc.select("det");
-      for (Element det : dets) {
-        Element prod = det.select("prod").first();
-        if (prod != null) {
-          Map<String, String> item = new HashMap<>();
-          item.put("description", prod.select("xProd").text());
-          item.put("code", prod.select("cProd").text());
-          item.put("quantity", prod.select("qCom").text());
-          item.put("unit", prod.select("uCom").text());
-          item.put("unitValue", prod.select("vUnCom").text());
-          item.put("totalValue", prod.select("vProd").text());
-          items.add(item);
-        }
-      }
-
-      return new NFCePRRawDocument(rawData, items, payments);
+      return parseFromDocument(doc, sanitizedUrl);
     } catch (IOException e) {
-      throw new RuntimeException("Erro ao capturar ou parsear XML da SEFAZ-PR", e);
+      throw new RuntimeException("Erro ao capturar ou parsear HTML da SEFAZ-PR", e);
     }
   }
+
+  public NFCePRRawDocument parseFromHtml(String html, String url) {
+    Document doc = Jsoup.parse(html);
+    return parseFromDocument(doc, url);
+  }
+
+  private NFCePRRawDocument parseFromDocument(Document doc, String url) {
+    Map<String, String> rawData = new HashMap<>();
+    List<Map<String, String>> items = new ArrayList<>();
+    List<Map<String, String>> payments = new ArrayList<>();
+
+    // Dados da Nota (Sefaz-PR usa classes como .txtCenter e .chave)
+    rawData.put("accessKey", doc.select(".chave").text().replaceAll("[^0-9]", ""));
+    
+    Element infoNota = doc.select("#infos").first();
+    if (infoNota != null) {
+        String textoInfo = infoNota.text();
+        // Regex simples ou split para pegar Numero e Serie se necessário
+        // No PR geralmente está em <strong>NFC-e nº: 000...  Série: 1</strong>
+        rawData.put("number", extractByRegex(textoInfo, "nº:\\s*(\\d+)", 1));
+        rawData.put("series", extractByRegex(textoInfo, "Série:\\s*(\\d+)", 1));
+        rawData.put("emissionDate", extractByRegex(textoInfo, "Emissão:\\s*(\\d{2}/\\d{2}/\\d{4}\\s*\\d{2}:\\d{2}:\\d{2})", 1));
+    }
+
+    // Emitente
+    Element emitenteArea = doc.select(".txtCenter").first();
+    if (emitenteArea != null) {
+        rawData.put("issuerName", emitenteArea.select(".txtMaior").text());
+        rawData.put("cnpj", emitenteArea.text().replaceAll(".*CNPJ:\\s*([0-9.\\-/]+).*", "$1").replaceAll("[^0-9]", ""));
+    }
+
+    // Totais e Pagamentos
+    Elements rowsTotal = doc.select("#totalNota .totalNf");
+    for (Element rowTotal : rowsTotal) {
+        Elements labels = rowTotal.select("label");
+        for (Element label : labels) {
+            String text = label.text().toLowerCase();
+            Element value = label.nextElementSibling();
+            if (value != null) {
+                if (text.contains("valor total r$")) rawData.put("totalProducts", value.text());
+                if (text.contains("valor a pagar r$")) rawData.put("totalInvoice", value.text());
+                if (text.contains("descontos r$")) rawData.put("discount", value.text());
+                
+                if (text.contains("forma de pagamento")) {
+                    Map<String, String> payment = new HashMap<>();
+                    payment.put("method", mapFormaPagto(value.text()));
+                    // Busca o valor pago na mesma div ou próxima
+                    Element valPagto = label.parent().select("label:contains(Valor pago)").first();
+                    String strVal = (valPagto != null && valPagto.nextElementSibling() != null) ? valPagto.nextElementSibling().text() : "";
+                    payment.put("amount", strVal);
+                    payments.add(payment);
+                }
+            }
+        }
+    }
+
+    // Itens
+    Elements rows = doc.select("#tabResult tr[id^=linha_]");
+    for (Element row : rows) {
+      Elements cols = row.select("td");
+      if (cols.size() >= 6) {
+        Map<String, String> item = new HashMap<>();
+        item.put("code", cols.get(0).text());
+        item.put("description", cols.get(1).text());
+        item.put("quantity", cols.get(2).text());
+        item.put("unit", cols.get(3).text());
+        item.put("unitValue", cols.get(4).text());
+        item.put("totalValue", cols.get(5).text());
+        items.add(item);
+      }
+    }
+
+    // Se a forma de pagamento for vazia ou não tiver valor, tenta um fallback básico
+    if (payments.isEmpty() && rawData.containsKey("totalInvoice")) {
+        Map<String, String> payment = new HashMap<>();
+        payment.put("method", "99");
+        payment.put("amount", rawData.get("totalInvoice"));
+        payments.add(payment);
+    }
+
+    // Fallback access key from URL
+    if (rawData.get("accessKey").isEmpty() && url != null && url.contains("p=")) {
+      String p = url.split("p=")[1].split("%7C")[0];
+      rawData.put("accessKey", p);
+    }
+
+    return new NFCePRRawDocument(rawData, items, payments);
+  }
+
+  private String extractByRegex(String text, String regex, int group) {
+      try {
+          java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
+          java.util.regex.Matcher matcher = pattern.matcher(text);
+          if (matcher.find()) return matcher.group(group);
+      } catch (Exception e) {}
+      return "";
+  }
+
+  private String mapFormaPagto(String texto) {
+    if (texto == null) return "99";
+    String t = java.text.Normalizer.normalize(texto.toLowerCase(), java.text.Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
+    if (t.contains("dinheiro")) return "01";
+    if (t.contains("cartao") && t.contains("credito")) return "03";
+    if (t.contains("cartao") && t.contains("debito")) return "04";
+    if (t.contains("pix")) return "17";
+    return "99";
+  }
 }
+
 
