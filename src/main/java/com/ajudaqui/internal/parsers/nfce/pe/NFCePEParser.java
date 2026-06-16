@@ -1,5 +1,6 @@
 package com.ajudaqui.internal.parsers.nfce.pe;
 
+import com.ajudaqui.exception.FiscalParseException;
 import com.ajudaqui.model.UrlInput;
 import com.ajudaqui.internal.FiscalParser;
 import org.jsoup.Jsoup;
@@ -102,7 +103,7 @@ public class NFCePEParser implements FiscalParser<NFCePERawDocument, UrlInput> {
 
             return new NFCePERawDocument(rawData, items, payments);
         } catch (IOException e) {
-            throw new RuntimeException("Erro ao capturar ou parsear XML da SEFAZ-PE", e);
+            throw new FiscalParseException("Erro ao capturar ou parsear XML da SEFAZ-PE: " + e.getMessage());
         }
     }
 }

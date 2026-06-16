@@ -31,7 +31,7 @@ public class FiscalParseService {
   public FiscalDocument parse(Input input) {
     if (input instanceof UrlInput) {
       String url = ((UrlInput) input).getUrl();
-      if (url.contains("sefaz.pe.gov.br")) {
+      if (url.contains("pe.gov.br")) {
         logger.info("Detectado NFCe de Pernambuco");
         NFCePEParser parser = new NFCePEParser();
         NFCePENormalizer normalizer = new NFCePENormalizer();
@@ -40,7 +40,7 @@ public class FiscalParseService {
         return normalizer.normalize(raw);
       }
 
-      if (url.contains("sefaz.pr.gov.br")) {
+      if (url.contains("pr.gov.br")) {
         logger.info("Detectado NFCe de parana");
         NFCePRNormalizer normalizer = new NFCePRNormalizer();
 
@@ -48,7 +48,7 @@ public class FiscalParseService {
         return normalizer.normalize(raw);
       }
 
-      if (url.contains("sefaz.ba.gov.br")) {
+      if (url.contains("ba.gov.br")) {
         logger.info("Detectado NFCe de Bahia");
         NFCeBAParser parser = new NFCeBAParser();
         NFCeBANormalizer normalizer = new NFCeBANormalizer();
@@ -71,8 +71,11 @@ public class FiscalParseService {
     } catch (FiscalParseException e) {
       throw e;
     } catch (Exception e) {
-      logger.error("Erro ao converter para JSON", e);
-      throw new FiscalParseException("Erro ao processar documento", e);
+      String message = e.getMessage();
+      if (e.getCause() != null) {
+          message += " -> " + e.getCause().getMessage();
+      }
+      throw new FiscalParseException("Erro ao processar documento: " + message);
     }
   }
 }

@@ -1,5 +1,6 @@
 package com.ajudaqui.internal.parsers.nfce.pr;
 
+import com.ajudaqui.exception.FiscalParseException;
 import com.ajudaqui.model.UrlInput;
 import com.ajudaqui.internal.FiscalParser;
 import org.jsoup.Jsoup;
@@ -28,7 +29,7 @@ public class NFCePRParser implements FiscalParser<NFCePRRawDocument, UrlInput> {
 
       return parseFromDocument(doc, sanitizedUrl);
     } catch (IOException e) {
-      throw new RuntimeException("Erro ao capturar ou parsear HTML da SEFAZ-PR", e);
+      throw new RuntimeException("Erro ao capturar ou parsear HTML da SEFAZ-PR: " + e.getMessage());
     }
   }
 

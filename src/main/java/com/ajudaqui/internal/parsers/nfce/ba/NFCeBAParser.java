@@ -1,5 +1,6 @@
 package com.ajudaqui.internal.parsers.nfce.ba;
 
+import com.ajudaqui.exception.FiscalParseException;
 import com.ajudaqui.model.UrlInput;
 import com.ajudaqui.internal.FiscalParser;
 
@@ -29,7 +30,7 @@ public class NFCeBAParser implements FiscalParser<NFCeBARawDocument, UrlInput> {
 
       return parseFromDocument(doc, sanitizedUrl);
     } catch (IOException e) {
-      throw new RuntimeException("Erro ao capturar ou parsear HTML da SEFAZ-BA", e);
+      throw new FiscalParseException("Erro ao capturar ou parsear HTML da SEFAZ-BA: " + e.getMessage());
     }
   }
 
@@ -103,5 +104,3 @@ public class NFCeBAParser implements FiscalParser<NFCeBARawDocument, UrlInput> {
     return "99";
   }
 }
-
-
