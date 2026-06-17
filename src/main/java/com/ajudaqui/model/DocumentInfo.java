@@ -1,19 +1,17 @@
 package com.ajudaqui.model;
 
-import java.time.LocalDateTime;
-
 public class DocumentInfo {
     private DocumentType type;
     private State state;
     private String accessKey;
     private String number;
     private String series;
-    private LocalDateTime emissionDate;
+    private String emissionDate;
     private String protocol;
 
     public DocumentInfo() {}
 
-    public DocumentInfo(DocumentType type, State state, String accessKey, String number, String series, LocalDateTime emissionDate, String protocol) {
+    public DocumentInfo(DocumentType type, State state, String accessKey, String number, String series, String emissionDate, String protocol) {
         this.type = type;
         this.state = state;
         this.accessKey = accessKey;
@@ -33,8 +31,8 @@ public class DocumentInfo {
     public void setNumber(String number) { this.number = number; }
     public String getSeries() { return series; }
     public void setSeries(String series) { this.series = series; }
-    public LocalDateTime getEmissionDate() { return emissionDate; }
-    public void setEmissionDate(LocalDateTime emissionDate) { this.emissionDate = emissionDate; }
+    public String getEmissionDate() { return emissionDate; }
+    public void setEmissionDate(String emissionDate) { this.emissionDate = emissionDate; }
     public String getProtocol() { return protocol; }
     public void setProtocol(String protocol) { this.protocol = protocol; }
 }

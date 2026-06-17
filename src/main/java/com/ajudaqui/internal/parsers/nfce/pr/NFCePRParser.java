@@ -49,58 +49,91 @@ public class NFCePRParser implements FiscalParser<NFCePRRawDocument, UrlInput> {
     Element infoNota = doc.select("#infos").first();
     if (infoNota != null) {
         String textoInfo = infoNota.text();
-        // Regex simples ou split para pegar Numero e Serie se necessário
-        // No PR geralmente está em <strong>NFC-e nº: 000...  Série: 1</strong>
-        rawData.put("number", extractByRegex(textoInfo, "nº:\\s*(\\d+)", 1));
+        rawData.put("number", extractByRegex(textoInfo, "(?:nº|Número):\\s*(\\d+)", 1));
         rawData.put("series", extractByRegex(textoInfo, "Série:\\s*(\\d+)", 1));
         rawData.put("emissionDate", extractByRegex(textoInfo, "Emissão:\\s*(\\d{2}/\\d{2}/\\d{4}\\s*\\d{2}:\\d{2}:\\d{2})", 1));
     }
 
     // Emitente
     Element emitenteArea = doc.select(".txtCenter").first();
+    if (emitenteArea == null) emitenteArea = doc.select("#conteudo .txtCenter").first();
     if (emitenteArea != null) {
-        rawData.put("issuerName", emitenteArea.select(".txtMaior").text());
+        rawData.put("issuerName", emitenteArea.select(".txtMaior, .txtTopo").text());
         rawData.put("cnpj", emitenteArea.text().replaceAll(".*CNPJ:\\s*([0-9.\\-/]+).*", "$1").replaceAll("[^0-9]", ""));
     }
 
-    // Totais e Pagamentos
-    Elements rowsTotal = doc.select("#totalNota .totalNf");
-    for (Element rowTotal : rowsTotal) {
-        Elements labels = rowTotal.select("label");
-        for (Element label : labels) {
-            String text = label.text().toLowerCase();
-            Element value = label.nextElementSibling();
-            if (value != null) {
-                if (text.contains("valor total r$")) rawData.put("totalProducts", value.text());
-                if (text.contains("valor a pagar r$")) rawData.put("totalInvoice", value.text());
-                if (text.contains("descontos r$")) rawData.put("discount", value.text());
-                
-                if (text.contains("forma de pagamento")) {
-                    Map<String, String> payment = new HashMap<>();
-                    payment.put("method", mapFormaPagto(value.text()));
-                    // Busca o valor pago na mesma div ou próxima
-                    Element valPagto = label.parent().select("label:contains(Valor pago)").first();
-                    String strVal = (valPagto != null && valPagto.nextElementSibling() != null) ? valPagto.nextElementSibling().text() : "";
-                    payment.put("amount", strVal);
-                    payments.add(payment);
-                }
-            }
+    // Totais e Pagamentos (Suporta layout antigo e novo 2026)
+    Elements labels = doc.select("#totalNota label");
+    if (labels.isEmpty()) labels = doc.select("#totalNota .totalNf label, #totalNota div label");
+    
+    for (Element label : labels) {
+        String text = label.text().toLowerCase();
+        Element value = label.nextElementSibling();
+        if (value == null) continue;
+        String valText = value.text().trim();
+
+        if (text.contains("valor total r$") || text.contains("total bruto")) {
+            rawData.put("totalProducts", valText);
+        } else if (text.contains("valor a pagar r$")) {
+            rawData.put("totalInvoice", valText);
+        } else if (text.contains("descontos r$")) {
+            rawData.put("discount", valText);
+        } else if (text.contains("forma de pagamento") && !valText.toLowerCase().contains("valor pago")) {
+            Map<String, String> payment = new HashMap<>();
+            payment.put("method", mapFormaPagto(valText));
+            // Busca o valor pago na mesma div ou próxima
+            Element valPagtoLabel = label.parent().select("label:contains(Valor pago)").first();
+            String strVal = (valPagtoLabel != null && valPagtoLabel.nextElementSibling() != null) ? valPagtoLabel.nextElementSibling().text() : valText;
+            payment.put("amount", strVal);
+            payments.add(payment);
+        } else if (label.hasClass("tx") || (text.length() > 2 && valText.matches(".*\\d+.*") && !text.contains("qtd.") && !text.contains("tributos") && !text.contains("valor pago"))) {
+            // Provável forma de pagamento no layout novo (o label é o nome da forma)
+            Map<String, String> payment = new HashMap<>();
+            payment.put("method", mapFormaPagto(text));
+            payment.put("amount", valText);
+            payments.add(payment);
         }
     }
 
     // Itens
-    Elements rows = doc.select("#tabResult tr[id^=linha_]");
+    Elements rows = doc.select("#tabResult tr");
     for (Element row : rows) {
       Elements cols = row.select("td");
-      if (cols.size() >= 6) {
+      if (cols.size() > 0) {
         Map<String, String> item = new HashMap<>();
-        item.put("code", cols.get(0).text());
-        item.put("description", cols.get(1).text());
-        item.put("quantity", cols.get(2).text());
-        item.put("unit", cols.get(3).text());
-        item.put("unitValue", cols.get(4).text());
-        item.put("totalValue", cols.get(5).text());
-        items.add(item);
+        if (row.id().startsWith("linha_") && cols.size() >= 6) {
+            // Layout Antigo
+            item.put("code", cols.get(0).text());
+            item.put("description", cols.get(1).text());
+            item.put("quantity", cols.get(2).text());
+            item.put("unit", cols.get(3).text());
+            item.put("unitValue", cols.get(4).text());
+            item.put("totalValue", cols.get(5).text());
+        } else if (cols.get(0).select(".txtTit2").size() > 0) {
+            // Layout Novo 2026
+            Element descCell = cols.get(0);
+            item.put("description", descCell.select(".txtTit2").text().trim());
+            item.put("code", descCell.select(".RCod").text().replaceAll("[^0-9]", ""));
+            
+            String qtdText = descCell.select(".Rqtd").text();
+            item.put("quantity", qtdText.contains(":") ? qtdText.substring(qtdText.indexOf(":") + 1).trim() : qtdText.trim());
+            
+            String unitText = descCell.select(".RUN, .Run").text();
+            item.put("unit", unitText.contains(":") ? unitText.substring(unitText.indexOf(":") + 1).trim() : unitText.trim());
+            
+            String valUnitText = descCell.select(".RvalUnit").text();
+            valUnitText = valUnitText.contains(":") ? valUnitText.substring(valUnitText.indexOf(":") + 1).trim() : valUnitText.trim();
+            // Limpa caracteres especiais como \u00A0
+            valUnitText = valUnitText.replace("\u00A0", " ").trim();
+            item.put("unitValue", valUnitText);
+            
+            Element valCell = cols.size() > 1 ? cols.get(1) : descCell;
+            item.put("totalValue", valCell.select(".valor").text().trim());
+        }
+        
+        if (item.get("description") != null && !item.get("description").isEmpty()) {
+            items.add(item);
+        }
       }
     }
 
@@ -134,6 +167,7 @@ public class NFCePRParser implements FiscalParser<NFCePRRawDocument, UrlInput> {
     if (texto == null) return "99";
     String t = java.text.Normalizer.normalize(texto.toLowerCase(), java.text.Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
     if (t.contains("dinheiro")) return "01";
+    if (t.contains("credito") && t.contains("loja")) return "05";
     if (t.contains("cartao") && t.contains("credito")) return "03";
     if (t.contains("cartao") && t.contains("debito")) return "04";
     if (t.contains("pix")) return "17";

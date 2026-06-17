@@ -1,18 +1,16 @@
 package com.ajudaqui.model;
 
-import java.math.BigDecimal;
-
 public class Item {
     private String description;
     private String code;
-    private BigDecimal quantity;
+    private String quantity;
     private String unit;
-    private BigDecimal unitValue;
-    private BigDecimal totalValue;
+    private String unitValue;
+    private String totalValue;
 
     public Item() {}
 
-    public Item(String description, String code, BigDecimal quantity, String unit, BigDecimal unitValue, BigDecimal totalValue) {
+    public Item(String description, String code, String quantity, String unit, String unitValue, String totalValue) {
         this.description = description;
         this.code = code;
         this.quantity = quantity;
@@ -25,12 +23,12 @@ public class Item {
     public void setDescription(String description) { this.description = description; }
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
-    public BigDecimal getQuantity() { return quantity; }
-    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public String getQuantity() { return quantity; }
+    public void setQuantity(String quantity) { this.quantity = quantity; }
     public String getUnit() { return unit; }
     public void setUnit(String unit) { this.unit = unit; }
-    public BigDecimal getUnitValue() { return unitValue; }
-    public void setUnitValue(BigDecimal unitValue) { this.unitValue = unitValue; }
-    public BigDecimal getTotalValue() { return totalValue; }
-    public void setTotalValue(BigDecimal totalValue) { this.totalValue = totalValue; }
+    public String getUnitValue() { return unitValue; }
+    public void setUnitValue(String unitValue) { this.unitValue = unitValue; }
+    public String getTotalValue() { return totalValue; }
+    public void setTotalValue(String totalValue) { this.totalValue = totalValue; }
 }

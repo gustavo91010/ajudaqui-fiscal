@@ -5,7 +5,6 @@ import com.ajudaqui.model.FiscalDocument;
 import com.ajudaqui.model.State;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,24 +23,24 @@ public class NFCePENormalizerTest {
         rawData.put("number", "71660");
         rawData.put("series", "3");
         rawData.put("emissionDate", "2026-06-08T18:01:55-03:00");
-        rawData.put("totalProducts", "9.00");
-        rawData.put("totalInvoice", "9.00");
-        rawData.put("discount", "0.00");
-        rawData.put("change", "1.00");
+        rawData.put("totalProducts", "9,00");
+        rawData.put("totalInvoice", "9,00");
+        rawData.put("discount", "0,00");
+        rawData.put("change", "1,00");
 
         List<Map<String, String>> items = List.of(
             Map.of(
                 "description", "PAO FRANCES KG",
                 "code", "607",
-                "quantity", "0.7200",
+                "quantity", "0,7200",
                 "unit", "KG",
-                "unitValue", "12.50",
-                "totalValue", "9.00"
+                "unitValue", "12,50",
+                "totalValue", "9,00"
             )
         );
 
         List<Map<String, String>> payments = List.of(
-            Map.of("method", "01", "amount", "10.00")
+            Map.of("method", "01", "amount", "10,00")
         );
 
         NFCePERawDocument raw = new NFCePERawDocument(rawData, items, payments);
@@ -57,14 +56,14 @@ public class NFCePENormalizerTest {
         assertEquals("60832569000145", doc.getIssuer().getCnpj());
         
         // Totais
-        assertEquals(new BigDecimal("9.00"), doc.getTotals().getTotalInvoice());
-        assertEquals(new BigDecimal("10.00"), doc.getTotals().getTotalPaid());
-        assertEquals(new BigDecimal("1.00"), doc.getTotals().getChange());
+        assertEquals("9,00", doc.getTotals().getTotalInvoice());
+        assertEquals("10,00", doc.getTotals().getTotalPaid());
+        assertEquals("1,00", doc.getTotals().getChange());
         
         // Itens
         assertEquals(1, doc.getItems().size());
         assertEquals("PAO FRANCES KG", doc.getItems().get(0).getDescription());
-        assertEquals(new BigDecimal("0.7200"), doc.getItems().get(0).getQuantity());
+        assertEquals("0,7200", doc.getItems().get(0).getQuantity());
         
         // Pagamentos
         assertEquals(1, doc.getPayments().size());

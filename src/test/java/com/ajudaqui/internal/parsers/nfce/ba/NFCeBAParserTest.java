@@ -4,7 +4,6 @@ import com.ajudaqui.model.FiscalDocument;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -30,18 +29,18 @@ public class NFCeBAParserTest {
         assertEquals("06057223000156", doc.getIssuer().getCnpj());
         
         // Verificando Totais
-        assertEquals(new BigDecimal("140.00"), doc.getTotals().getTotalInvoice());
-        assertEquals(new BigDecimal("10.00"), doc.getTotals().getDiscount());
+        assertEquals("140,00", doc.getTotals().getTotalInvoice());
+        assertEquals("10,00", doc.getTotals().getDiscount());
         
         // Verificando Itens
         assertEquals(2, doc.getItems().size());
         assertEquals("ARROZ 5KG", doc.getItems().get(0).getDescription());
-        assertEquals(new BigDecimal("70.00"), doc.getItems().get(0).getTotalValue());
+        assertEquals("70,00", doc.getItems().get(0).getTotalValue());
         assertEquals("FEIJAO 1KG", doc.getItems().get(1).getDescription());
         
         // Verificando Pagamento
         assertEquals(1, doc.getPayments().size());
         assertEquals("DINHEIRO", doc.getPayments().get(0).getMethod());
-        assertEquals(new BigDecimal("140.00"), doc.getPayments().get(0).getAmount());
+        assertEquals("140,00", doc.getPayments().get(0).getAmount());
     }
 }

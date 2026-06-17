@@ -5,7 +5,6 @@ import com.ajudaqui.model.State;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -32,17 +31,17 @@ public class NFCePRParserTest {
         assertEquals("79778379000115", doc.getIssuer().getCnpj());
         
         // Verificando Totais
-        assertEquals(new BigDecimal("85.00"), doc.getTotals().getTotalInvoice());
-        assertEquals(new BigDecimal("5.00"), doc.getTotals().getDiscount());
+        assertEquals("85,00", doc.getTotals().getTotalInvoice());
+        assertEquals("5,00", doc.getTotals().getDiscount());
         
         // Verificando Itens
         assertEquals(2, doc.getItems().size());
         assertEquals("LEITE INTEGRAL 1L", doc.getItems().get(0).getDescription());
-        assertEquals(new BigDecimal("66.00"), doc.getItems().get(0).getTotalValue());
+        assertEquals("66,00", doc.getItems().get(0).getTotalValue());
         
         // Verificando Pagamento
         assertEquals(1, doc.getPayments().size());
         assertEquals("CARTAO_CREDITO", doc.getPayments().get(0).getMethod());
-        assertEquals(new BigDecimal("85.00"), doc.getPayments().get(0).getAmount());
+        assertEquals("85,00", doc.getPayments().get(0).getAmount());
     }
 }

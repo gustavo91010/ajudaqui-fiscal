@@ -12,35 +12,47 @@ public class FiscalParseService {
 
   public FiscalParseService() {
     this.mapper = new ObjectMapper();
-    this.mapper.registerModule(new JavaTimeModule());
-    this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
   }
 
   /**
-   * Faz o parse do input e retorna o objeto FiscalDocument.
+   * Faz o parse do input e retorna o objeto ParseResult com validações.
    */
-  public FiscalDocument parse(Input input) {
-    if (!(input instanceof UrlInput))
-      throw new FiscalParseException("Tipo de documento não suportado para o input fornecido.");
+  public ParseResult parse(Input input) {
+    try {
+      if (!(input instanceof UrlInput))
+        return ParseResult.failure("Tipo de documento não suportado para o input fornecido.");
 
-    return StateSelection.resolve(input);
+      FiscalDocument doc = StateSelection.resolve(input);
+      ParseResult result = ParseResult.success(doc);
+      validate(doc, result);
+      return result;
+    } catch (Exception e) {
+      return ParseResult.failure(e.getMessage());
+    }
+  }
+
+  private void validate(FiscalDocument doc, ParseResult result) {
+    if (doc.getDocument() == null || doc.getDocument().getAccessKey().isEmpty()) {
+      result.addWarning("Chave de acesso não identificada.");
+    }
+    if (doc.getItems() == null || doc.getItems().isEmpty()) {
+      result.addWarning("Nenhum item foi extraído.");
+    }
+    if (doc.getTotals() == null || "0".equals(doc.getTotals().getTotalInvoice())) {
+      result.addWarning("Valor total da nota parece estar zerado ou não foi identificado.");
+    }
   }
 
   /**
-   * Faz o parse do input e retorna uma String JSON.
+   * Faz o parse do input e retorna uma String JSON do ParseResult.
    */
   public String parseToJson(Input input) {
     try {
-      FiscalDocument doc = parse(input);
-      return mapper.writeValueAsString(doc);
-    } catch (FiscalParseException e) {
-      throw e;
+      ParseResult result = parse(input);
+      return mapper.writeValueAsString(result);
     } catch (Exception e) {
-      String message = e.getMessage();
-      if (e.getCause() != null) {
-        message += " -> " + e.getCause().getMessage();
-      }
-      throw new FiscalParseException("Erro ao processar documento: " + message);
+      return "{\"success\": false, \"error\": \"" + e.getMessage() + "\"}";
     }
   }
 }

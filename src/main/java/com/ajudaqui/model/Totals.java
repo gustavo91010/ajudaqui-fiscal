@@ -1,17 +1,15 @@
 package com.ajudaqui.model;
 
-import java.math.BigDecimal;
-
 public class Totals {
-    private BigDecimal totalProducts;
-    private BigDecimal totalInvoice;
-    private BigDecimal discount;
-    private BigDecimal totalPaid;
-    private BigDecimal change;
+    private String totalProducts;
+    private String totalInvoice;
+    private String discount;
+    private String totalPaid;
+    private String change;
 
     public Totals() {}
 
-    public Totals(BigDecimal totalProducts, BigDecimal totalInvoice, BigDecimal discount, BigDecimal totalPaid, BigDecimal change) {
+    public Totals(String totalProducts, String totalInvoice, String discount, String totalPaid, String change) {
         this.totalProducts = totalProducts;
         this.totalInvoice = totalInvoice;
         this.discount = discount;
@@ -19,14 +17,14 @@ public class Totals {
         this.change = change;
     }
 
-    public BigDecimal getTotalProducts() { return totalProducts; }
-    public void setTotalProducts(BigDecimal totalProducts) { this.totalProducts = totalProducts; }
-    public BigDecimal getTotalInvoice() { return totalInvoice; }
-    public void setTotalInvoice(BigDecimal totalInvoice) { this.totalInvoice = totalInvoice; }
-    public BigDecimal getDiscount() { return discount; }
-    public void setDiscount(BigDecimal discount) { this.discount = discount; }
-    public BigDecimal getTotalPaid() { return totalPaid; }
-    public void setTotalPaid(BigDecimal totalPaid) { this.totalPaid = totalPaid; }
-    public BigDecimal getChange() { return change; }
-    public void setChange(BigDecimal change) { this.change = change; }
+    public String getTotalProducts() { return totalProducts; }
+    public void setTotalProducts(String totalProducts) { this.totalProducts = totalProducts; }
+    public String getTotalInvoice() { return totalInvoice; }
+    public void setTotalInvoice(String totalInvoice) { this.totalInvoice = totalInvoice; }
+    public String getDiscount() { return discount; }
+    public void setDiscount(String discount) { this.discount = discount; }
+    public String getTotalPaid() { return totalPaid; }
+    public void setTotalPaid(String totalPaid) { this.totalPaid = totalPaid; }
+    public String getChange() { return change; }
+    public void setChange(String change) { this.change = change; }
 }

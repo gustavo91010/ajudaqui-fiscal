@@ -15,13 +15,14 @@ public class NFCePENormalizer implements Normalizer<NFCePERawDocument> {
         List<Payment> payments = raw.getPayments().stream()
             .map(m -> new Payment(
                 translatePaymentMethod(m.get("method")),
-                parseBigDecimal(m.get("amount"))
+                cleanValue(m.get("amount"))
             ))
             .collect(Collectors.toList());
 
-        BigDecimal totalPaid = payments.stream()
-            .map(Payment::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String totalPaid = raw.getRawData().getOrDefault("totalInvoice", "0");
+        if (payments.size() == 1) {
+            totalPaid = payments.get(0).getAmount();
+        }
 
         return new FiscalDocument(
             DocumentType.NFCE,
@@ -38,24 +39,24 @@ public class NFCePENormalizer implements Normalizer<NFCePERawDocument> {
                 raw.getRawData().getOrDefault("accessKey", ""), 
                 raw.getRawData().getOrDefault("number", ""),
                 raw.getRawData().getOrDefault("series", ""),
-                parseDateTime(raw.getRawData().get("emissionDate")),
+                raw.getRawData().get("emissionDate"),
                 ""
             ),
             new Totals(
-                parseBigDecimal(raw.getRawData().get("totalProducts")),
-                parseBigDecimal(raw.getRawData().get("totalInvoice")),
-                parseBigDecimal(raw.getRawData().get("discount")),
+                cleanValue(raw.getRawData().get("totalProducts")),
+                cleanValue(raw.getRawData().get("totalInvoice")),
+                cleanValue(raw.getRawData().get("discount")),
                 totalPaid,
-                parseBigDecimal(raw.getRawData().get("change"))
+                cleanValue(raw.getRawData().get("change"))
             ),
             payments,
             raw.getItems().stream().map(m -> new Item(
                 m.get("description"),
                 m.get("code"),
-                parseBigDecimal(m.get("quantity")),
+                cleanValue(m.get("quantity")),
                 m.get("unit"),
-                parseBigDecimal(m.get("unitValue")),
-                parseBigDecimal(m.get("totalValue"))
+                cleanValue(m.get("unitValue")),
+                cleanValue(m.get("totalValue"))
             )).collect(Collectors.toList())
         );
     }
@@ -73,32 +74,15 @@ public class NFCePENormalizer implements Normalizer<NFCePERawDocument> {
             case "12": return "VALE_PRESENTE";
             case "13": return "VALE_COMBUSTIVEL";
             case "15": return "BOLETO_BANCARIO";
+            case "17": return "PIX";
             case "90": return "SEM_PAGAMENTO";
             case "99": return "OUTROS";
             default: return "OUTROS (" + code + ")";
         }
     }
 
-    private LocalDateTime parseDateTime(String value) {
-        if (value == null || value.isBlank()) return null;
-        try {
-            return OffsetDateTime.parse(value).toLocalDateTime();
-        } catch (Exception e) {
-            try {
-                return LocalDateTime.parse(value);
-            } catch (Exception e2) {
-                return null;
-            }
-        }
-    }
-
-    private BigDecimal parseBigDecimal(String value) {
-        if (value == null || value.isBlank()) return BigDecimal.ZERO;
-        try {
-            String cleaned = value.trim().replace(",", ".");
-            return new BigDecimal(cleaned);
-        } catch (Exception e) {
-            return BigDecimal.ZERO;
-        }
+    private String cleanValue(String value) {
+        if (value == null || value.isBlank()) return "0";
+        return value.trim().replace("R$", "").replace(" ", "").replace("\u00A0", "").trim();
     }
 }
