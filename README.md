@@ -11,7 +11,9 @@ Uma biblioteca Java para captura e normalização de documentos fiscais (NFCe/NF
 - [ ] **MFE** (Modelo 65/59) - Módulo Fiscal Eletrônico (CE)
 
 ### Estados Suportados (NFC-e)
+- [x] Bahia (BA)
 - [x] Pernambuco (PE)
+- [x] Paraná (PR)
 - [ ] São Paulo (SP)
 - [ ] Minas Gerais (MG)
 - [ ] Rio de Janeiro (RJ)
@@ -26,8 +28,13 @@ Uma biblioteca Java para captura e normalização de documentos fiscais (NFCe/NF
 
 ## 📦 Instalação
 
+### Build Local (Maven Local)
+Para utilizar a lib em outros projetos na sua máquina:
+```bash
+./gradlew publishToMavenLocal
+```
 
-### Configuração no Projeto Consumidor (Gradle)
+### Configuração (Gradle)
 ```gradle
 repositories {
     mavenLocal()
@@ -39,7 +46,7 @@ dependencies {
 }
 ```
 
-### Configuração no Projeto Consumidor (Maven)
+### Configuração (Maven)
 ```xml
 <dependency>
     <groupId>com.ajudaqui</groupId>
@@ -48,37 +55,29 @@ dependencies {
 </dependency>
 ```
 
-## 🛠️ Como Usar
+## 🛠️ Como Usar (Quick Start)
 
-### Exemplo em Java
+### Java
 ```java
-import com.ajudaqui.service.FiscalParseService;
-import com.ajudaqui.model.UrlInput;
+FiscalParseService service = new FiscalParseService();
+// Aceita URL da SEFAZ ou HTML bruto
+UrlInput input = new UrlInput("https://nfce.sefaz.ba.gov.br/..."); 
 
-public class Main {
-    public static void main(String[] args) {
-        FiscalParseService service = new FiscalParseService();
-        UrlInput input = new UrlInput("https://nfce.sefaz.pe.gov.br/...");
+// Parse para POJO
+FiscalDocument doc = service.parse(input);
+System.out.println("CNPJ: " + doc.getIssuer().getDocument());
 
-        // Parse direto para JSON
-        String json = service.parseToJson(input);
-        System.out.println(json);
-    }
-}
+// Parse para JSON
+String json = service.parseToJson(input);
 ```
 
-### Exemplo em Kotlin
+### Kotlin
 ```kotlin
-import com.ajudaqui.service.FiscalParseService
-import com.ajudaqui.model.UrlInput
+val service = FiscalParseService()
+val input = UrlInput("https://nfce.sefaz.pe.gov.br/...")
 
-fun main() {
-    val service = FiscalParseService()
-    val input = UrlInput("https://nfce.sefaz.pe.gov.br/...")
-
-    val document = service.parse(input)
-    println("Empresa: ${document.issuer.businessName}")
-}
+val document = service.parse(input)
+println("Total: ${document.totals.totalValue}")
 ```
 
 ## 🏗️ Estrutura da Lib
