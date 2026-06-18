@@ -13,12 +13,12 @@ Para que seu projeto encontre a lib na sua máquina, execute na pasta da lib:
 ### `build.gradle.kts`
 ```kotlin
 repositories {
-    mavenLocal() // Necessário para encontrar a lib na sua máquina
     mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
-    implementation("com.ajudaqui:ajudaqui-fiscal:1.0.0")
+    implementation("com.github.gustavopssilva:ajudaqui-fiscal:1.0.0")
 }
 ```
 

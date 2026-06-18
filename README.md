@@ -28,31 +28,38 @@ Uma biblioteca Java para captura e normalização de documentos fiscais (NFCe/NF
 
 ## 📦 Instalação
 
-### Build Local (Maven Local)
-Para utilizar a lib em outros projetos na sua máquina:
-```bash
-./gradlew publishToMavenLocal
-```
-
 ### Configuração (Gradle)
 ```gradle
 repositories {
-    mavenLocal()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-    implementation 'com.ajudaqui:ajudaqui-fiscal:1.0.0'
+    implementation 'com.github.gustavopssilva:ajudaqui-fiscal:1.0.0'
 }
 ```
 
 ### Configuração (Maven)
 ```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
 <dependency>
-    <groupId>com.ajudaqui</groupId>
+    <groupId>com.github.gustavopssilva</groupId>
     <artifactId>ajudaqui-fiscal</artifactId>
     <version>1.0.0</version>
 </dependency>
+```
+
+### Build Local (Maven Local)
+Para utilizar a lib em outros projetos na sua máquina sem publicar:
+```bash
+./gradlew publishToMavenLocal
 ```
 
 ## 🛠️ Como Usar (Quick Start)

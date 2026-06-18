@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.ajudaqui'
+group = 'com.github.gustavopssilva'
 version = '1.0.0'
 
 repositories {
